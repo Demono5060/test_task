@@ -1,24 +1,25 @@
-from sqlalchemy import create_engine
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 from models.profiles import *
 import os
-engine = create_engine("sqlite:///data.sqlite")
 
 
-def database_create() -> bool:
-    if not os.path.exists('data.sqlite'):
-        Base.metadata.create_all(engine)
-        return True
-    return False
+class Database:
+    def __init__(self, engine: Engine):
+        self.engine = engine
 
+    def database_create(self) -> bool:
+        if not os.path.exists('data.sqlite'):
+            Base.metadata.create_all(self.engine)
+            return True
+        return False
 
-def create_profile(api_key: str, lang: str, url: str):
-    with Session(engine) as session:
-        profile = Profile(api_key=api_key, language=lang, url=url)
-        session.add(profile)
-        session.commit()
+    def create_profile(self, api_key: str, lang: str, url: str):
+        with Session(self.engine) as session:
+            profile = Profile(api_key=api_key, language=lang, url=url)
+            session.add(profile)
+            session.commit()
 
-
-def get_first_profile() -> Profile | None:
-    with Session(engine) as session:
-        return session.query(Profile).first()
+    def get_first_profile(self) -> Profile | None:
+        with Session(self.engine) as session:
+            return session.query(Profile).first()

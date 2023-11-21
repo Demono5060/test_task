@@ -1,53 +1,35 @@
-import db
-import phrase
-from api import Api
-from phrase import *
-from db import *
-
-phrases = phrase.Ru()
-dadata_url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address"
-api_key = ''
+from db import Database
+from sqlalchemy import create_engine
+from settings import create_profile, get_first_profile
+from api import find_address
+from models.profiles import Profile
 
 
-def create_profile():
-    link = input("Ссылка для обращения к API (Нажмите Enter, если не уверены)/Api link (Press Enter if you're not "
-                 "sure): ")
-    if not link:
-        link = dadata_url
-    while True:
-        api_key = input("API-ключ/API-key (https://dadata.ru/profile/#info): ")
-        lang = input("Язык/Language (Ru/En): ")
-        if len(api_key) != 40:
-            print("Неверный API-ключ/Wrong API-key!")
-        elif lang.lower() in ['ru', 'en']:
-            break
-    db.create_profile(api_key, lang, link)
+def get_lat_lon(address: dict) -> tuple:
+    return address.get('data').get('geo_lat'), address.get('data').get('geo_lon')
 
 
-def load_config():
-    global phrases
-    global api_key
-    global dadata_url
-    profile = db.get_first_profile()
-    if profile.language == 'en':
-        phrases = phrase.En
-    api_key = profile.api_key
-    dadata_url = profile.url
+def find_needed_address(user_profile: Profile, address: str) -> dict | None:
+    addresses = find_address(user_profile.url, user_profile.api_key, address)
+    if addresses:
+        for i in range(len(addresses)):
+            print(f"{i}) {addresses[i].get('value')}")
+        try:
+            address_id = int(input(user_profile.get_language().choose_address))
+            return addresses[address_id]
+        except ValueError:
+            print(user_profile.get_language().wrong_choice)
+            return None
 
 
 if __name__ == '__main__':
+    db = Database(create_engine('sqlite:///data.sqlite'))
     if db.database_create():
-        create_profile()
-    load_config()
-    api = Api(url=dadata_url, api_key=api_key)
-    while address := input(phrases.get_address):
-        addr = api.find_address(address)
-        if addr:
-            for i in range(len(addr)):
-                print(f"{i}) {addr[i].get('value')}")
-            try:
-                id = int(input(phrases.choose_address))
-                print(f"{phrases.latitude}: {addr[id].get('data').get('geo_lat')}")
-                print(f"{phrases.longitude}: {addr[id].get('data').get('geo_lon')}")
-            except:
-                print(phrases.wrong_choice)
+        create_profile(db)
+    profile = get_first_profile(db)
+    while address := input(profile.get_language().get_address):
+        needed_address = find_needed_address(profile, address)
+        if needed_address:
+            lat, lon = get_lat_lon(needed_address)
+            print(f"{profile.get_language().latitude}: {lat}")
+            print(f"{profile.get_language().longitude}: {lon}")
