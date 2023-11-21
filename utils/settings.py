@@ -1,5 +1,5 @@
 from models.profiles import Profile
-from input_utils import input_link, input_lang, input_api_key
+from utils.input_utils import input_link, input_lang, input_api_key
 
 
 def create_profile(database) -> None:

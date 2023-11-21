@@ -9,7 +9,7 @@ class Database:
         self.engine = engine
 
     def database_create(self) -> bool:
-        if not os.path.exists('data.sqlite'):
+        if not os.path.exists('../data.sqlite'):
             Base.metadata.create_all(self.engine)
             return True
         return False

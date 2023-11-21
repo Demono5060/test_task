@@ -1,7 +1,7 @@
-from db import Database
+from utils.db import Database
 from sqlalchemy import create_engine
-from settings import create_profile, get_first_profile
-from api import find_address
+from utils.settings import create_profile, get_first_profile
+from utils.api import find_address
 from models.profiles import Profile
 
 
